@@ -1,3 +1,5 @@
+import type { CaptureContext } from "../types";
+
 const KEYS = {
   TOKEN: "bugsnap_ext_token",
   API_URL: "bugsnap_ext_api_url",
@@ -5,6 +7,7 @@ const KEYS = {
   WORKSPACE_ID: "bugsnap_ext_workspace_id",
   PROJECT_ID: "bugsnap_ext_project_id",
   CONSOLE_CONSENT: "bugsnap_ext_console_consent",
+  PENDING_CAPTURE: "bugsnap_pending_capture",
 } as const;
 
 export const DEFAULT_API_URL = "http://localhost:8000";
@@ -69,4 +72,17 @@ export async function setSelectionPrefs(prefs: {
   if (prefs.projectId !== undefined) toSet[KEYS.PROJECT_ID] = prefs.projectId;
   if (prefs.consoleConsent !== undefined) toSet[KEYS.CONSOLE_CONSENT] = prefs.consoleConsent;
   await chrome.storage.local.set(toSet);
+}
+
+export async function savePendingCapture(capture: CaptureContext): Promise<void> {
+  await chrome.storage.local.set({ [KEYS.PENDING_CAPTURE]: capture });
+}
+
+export async function getPendingCapture(): Promise<CaptureContext | null> {
+  const res = await chrome.storage.local.get([KEYS.PENDING_CAPTURE]);
+  return (res[KEYS.PENDING_CAPTURE] as CaptureContext) || null;
+}
+
+export async function clearPendingCapture(): Promise<void> {
+  await chrome.storage.local.remove([KEYS.PENDING_CAPTURE]);
 }

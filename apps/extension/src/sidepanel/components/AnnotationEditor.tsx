@@ -19,6 +19,7 @@ export interface AnnotationEditorHandle {
 
 interface AnnotationEditorProps {
   imageDataUrl: string;
+  maxWidth?: number;
 }
 
 const TOOLS: { id: AnnotationTool; label: string; icon: typeof Square }[] = [
@@ -33,10 +34,11 @@ const TOOLS: { id: AnnotationTool; label: string; icon: typeof Square }[] = [
 export const AnnotationEditor = forwardRef<
   AnnotationEditorHandle,
   AnnotationEditorProps
->(function AnnotationEditor({ imageDataUrl }, ref) {
+>(function AnnotationEditor({ imageDataUrl, maxWidth = 920 }, ref) {
   const canvasElRef = useRef<HTMLCanvasElement | null>(null);
   const fabricRef = useRef<fabric.Canvas | null>(null);
   const [tool, setTool] = useState<AnnotationTool>("rect");
+  const [fitMode, setFitMode] = useState<"fit" | "actual">("fit");
   const toolRef = useRef<AnnotationTool>("rect");
   toolRef.current = tool;
 
@@ -51,10 +53,10 @@ export const AnnotationEditor = forwardRef<
     fabricRef.current = canvas;
 
     fabric.FabricImage.fromURL(imageDataUrl).then((img) => {
-      const maxWidth = 340;
       const origW = img.width || 800;
       const origH = img.height || 600;
-      const scale = Math.min(1, maxWidth / origW);
+      const targetMax = fitMode === "fit" ? maxWidth : origW;
+      const scale = Math.min(1, targetMax / origW);
       const displayW = Math.round(origW * scale);
       const displayH = Math.round(origH * scale);
 
@@ -186,7 +188,7 @@ export const AnnotationEditor = forwardRef<
       canvas.dispose();
       fabricRef.current = null;
     };
-  }, [imageDataUrl]);
+  }, [imageDataUrl, maxWidth, fitMode]);
 
   useImperativeHandle(ref, () => ({
     async exportWebPBlob(): Promise<Blob> {
@@ -224,8 +226,8 @@ export const AnnotationEditor = forwardRef<
   }
 
   return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-1 rounded-md border border-zinc-800 bg-zinc-900 p-1">
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#2f3336] bg-[#16181c] p-1.5">
         <div className="flex flex-wrap items-center gap-1">
           {TOOLS.map((t) => {
             const Icon = t.icon;
@@ -236,13 +238,13 @@ export const AnnotationEditor = forwardRef<
                 type="button"
                 title={t.label}
                 onClick={() => setTool(t.id)}
-                className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors ${
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors ${
                   active
                     ? "bg-white text-black"
-                    : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+                    : "text-[#e7e9ea] hover:bg-[#202327]"
                 }`}
               >
-                <Icon className="h-3 w-3" />
+                <Icon className="h-3.5 w-3.5" />
                 {t.label}
               </button>
             );
@@ -251,28 +253,35 @@ export const AnnotationEditor = forwardRef<
         <div className="flex items-center gap-1">
           <button
             type="button"
+            onClick={() => setFitMode((m) => (m === "fit" ? "actual" : "fit"))}
+            className="rounded-lg border border-[#2f3336] px-2 py-1 text-[11px] font-medium text-[#e7e9ea] hover:bg-[#202327]"
+          >
+            {fitMode === "fit" ? "Fit" : "100%"}
+          </button>
+          <button
+            type="button"
             title="Undo"
             onClick={handleUndo}
-            className="rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+            className="rounded-lg p-1.5 text-[#71767b] hover:bg-[#202327] hover:text-white"
           >
-            <Undo2 className="h-3.5 w-3.5" />
+            <Undo2 className="h-4 w-4" />
           </button>
           <button
             type="button"
             title="Clear annotations"
             onClick={handleClear}
-            className="rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
+            className="rounded-lg p-1.5 text-[#71767b] hover:bg-[#202327] hover:text-white"
           >
-            <RotateCcw className="h-3.5 w-3.5" />
+            <RotateCcw className="h-4 w-4" />
           </button>
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-md border border-zinc-800 bg-zinc-950">
-        <canvas ref={canvasElRef} />
+      <div className="overflow-auto rounded-xl border border-[#2f3336] bg-black p-2">
+        <canvas ref={canvasElRef} className="mx-auto" />
       </div>
-      <p className="text-[11px] text-zinc-500">
-        Use <span className="text-zinc-300">Redact</span> to permanently cover
+      <p className="text-xs text-[#71767b]">
+        Use <span className="text-[#e7e9ea]">Redact</span> to permanently cover
         passwords, tokens, or PII before upload.
       </p>
     </div>

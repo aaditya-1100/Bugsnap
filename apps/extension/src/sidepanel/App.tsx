@@ -33,6 +33,7 @@ import {
   DEFAULT_API_URL,
   getAuthSession,
   getSelectionPrefs,
+  savePendingCapture,
   setAuthSession,
   setSelectionPrefs,
 } from "../lib/storage";
@@ -248,7 +249,7 @@ export default function App() {
       }
 
       const ctx = await getActiveTabPageContext(consoleConsent);
-      setCapture({
+      const nextCapture: CaptureContext = {
         dataUrl,
         pageUrl: ctx.pageUrl,
         pageTitle: ctx.pageTitle,
@@ -256,10 +257,11 @@ export default function App() {
         browserInfo: collectBrowserMetadata(),
         viewportInfo: ctx.viewportInfo,
         consoleErrors: ctx.consoleErrors,
+      };
+      await savePendingCapture(nextCapture);
+      await chrome.tabs.create({
+        url: chrome.runtime.getURL("editor.html"),
       });
-      setTitle(ctx.pageTitle ? `Bug on ${ctx.pageTitle.slice(0, 80)}` : "Visual bug report");
-      setDescription("");
-      setView("edit");
     } catch (err) {
       setSubmitError(
         err instanceof Error
@@ -469,18 +471,17 @@ export default function App() {
             </div>
           ) : null}
 
-          <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-4 text-center">
+          <div className="rounded-2xl border border-[#2f3336] bg-[#16181c] p-4 text-center">
             <Camera className="mx-auto mb-2 h-6 w-6 text-white" />
-            <h1 className="text-sm font-semibold">Capture screenshot</h1>
-            <p className="mt-1 text-xs text-zinc-400">
-              Capture the full visible screen or drag a box to snip a specific
-              area.
+            <h1 className="text-sm font-semibold text-white">Capture screenshot</h1>
+            <p className="mt-1 text-xs text-[#71767b]">
+              Opens a full-screen editor tab for easy annotation &amp; redaction.
             </p>
             <div className="mt-4 space-y-2">
               <button
                 type="button"
                 onClick={() => handleCapture("region")}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-white px-3 py-2 text-xs font-semibold text-black hover:bg-zinc-200"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-semibold text-black hover:bg-zinc-200"
               >
                 <Crop className="h-3.5 w-3.5" />
                 Select Area (Snip)
@@ -488,7 +489,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => handleCapture("full")}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-zinc-700 bg-black px-3 py-2 text-xs font-medium text-zinc-200 hover:bg-zinc-900"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-[#2f3336] bg-black px-3 py-2 text-xs font-medium text-[#e7e9ea] hover:bg-[#202327]"
               >
                 <Camera className="h-3.5 w-3.5" />
                 Capture Visible Screen
@@ -496,7 +497,7 @@ export default function App() {
             </div>
           </div>
 
-          <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-xs">
+          <label className="flex cursor-pointer items-start gap-2.5 rounded-2xl border border-[#2f3336] bg-[#16181c] p-3 text-xs">
             <input
               type="checkbox"
               checked={consoleConsent}
