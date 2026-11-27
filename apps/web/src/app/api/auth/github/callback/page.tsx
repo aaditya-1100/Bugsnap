@@ -12,16 +12,16 @@ function GitHubCallbackInner() {
 
   useEffect(() => {
     const code = searchParams.get("code");
-    const workspaceId = searchParams.get("state");
-    if (!code || !workspaceId) {
+    const state = searchParams.get("state");
+    if (!code || !state) {
       setError("Missing GitHub OAuth parameters.");
       return;
     }
 
     api
-      .completeGitHubCallback(workspaceId, code)
-      .then(() => {
-        router.replace(`/workspaces/${workspaceId}/settings`);
+      .completeGitHubCallback({ code, state })
+      .then((res) => {
+        router.replace(`/workspaces/${res.workspace_id}/settings`);
       })
       .catch((err) => {
         setError(

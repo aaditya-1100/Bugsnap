@@ -69,7 +69,7 @@ async def save_attachment(
 
     # Local dev storage fallback
     target_path = (LOCAL_UPLOAD_DIR / object_key).resolve()
-    if not str(target_path).startswith(str(LOCAL_UPLOAD_DIR)):
+    if not target_path.is_relative_to(LOCAL_UPLOAD_DIR):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid file path.")
     os.makedirs(target_path.parent, exist_ok=True)
     target_path.write_bytes(data)

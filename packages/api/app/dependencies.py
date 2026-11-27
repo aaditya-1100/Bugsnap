@@ -5,7 +5,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.database import get_db
+from app.database import AsyncSessionLocal, ensure_tables_initialized, get_db
 from app.models.user import User
 from app.models.workspace import WorkspaceMember
 from app.services.auth_service import decode_access_token, get_user_by_id
@@ -15,7 +15,6 @@ security = HTTPBearer(auto_error=False)
 
 async def get_current_user(
     credentials: HTTPAuthorizationCredentials | None = Depends(security),
-    db: AsyncSession = Depends(get_db),
 ) -> User:
     if credentials is None or not credentials.credentials:
         raise HTTPException(
@@ -40,7 +39,9 @@ async def get_current_user(
             detail="Invalid token subject",
         )
 
-    user = await get_user_by_id(db, user_id)
+    await ensure_tables_initialized()
+    async with AsyncSessionLocal() as db:
+        user = await get_user_by_id(db, user_id)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

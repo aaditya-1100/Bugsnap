@@ -30,11 +30,20 @@ auth_limiter = SlidingWindowRateLimiter(max_requests=20, window_seconds=60)
 ai_limiter = SlidingWindowRateLimiter(max_requests=15, window_seconds=60)
 
 
+def _get_client_ip(request: Request) -> str:
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if forwarded_for:
+        first_ip = forwarded_for.split(",")[0].strip()
+        if first_ip:
+            return first_ip
+    return request.client.host if request.client else "unknown"
+
+
 async def rate_limit_auth(request: Request) -> None:
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = _get_client_ip(request)
     auth_limiter.check(f"auth:{client_ip}")
 
 
 async def rate_limit_ai(request: Request) -> None:
-    client_ip = request.client.host if request.client else "unknown"
+    client_ip = _get_client_ip(request)
     ai_limiter.check(f"ai:{client_ip}")

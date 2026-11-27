@@ -7,8 +7,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
-from app.dependencies import require_workspace_member
+from app.dependencies import get_current_user, require_workspace_member
 from app.models.report import Report, ReportAttachment
+from app.models.user import User
 from app.models.workspace import WorkspaceMember
 from app.schemas.report import AttachmentResponse
 from app.services.storage_service import LOCAL_UPLOAD_DIR, save_attachment
@@ -77,9 +78,36 @@ async def list_attachments(
 
 
 @router.get("/api/attachments/files/{file_path:path}")
-async def serve_local_attachment(file_path: str) -> FileResponse:
+async def serve_local_attachment(
+    file_path: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> FileResponse:
     """Serve locally stored screenshots in dev mode (when Supabase Storage is not configured)."""
     target = (LOCAL_UPLOAD_DIR / file_path).resolve()
-    if not str(target).startswith(str(LOCAL_UPLOAD_DIR)) or not target.is_file():
+    if not target.is_relative_to(LOCAL_UPLOAD_DIR) or not target.is_file():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found")
+
+    parts = target.relative_to(LOCAL_UPLOAD_DIR).parts
+    if not parts:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found")
+    try:
+        workspace_id = UUID(parts[0])
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found")
+
+    membership = (
+        await db.execute(
+            select(WorkspaceMember).where(
+                WorkspaceMember.workspace_id == workspace_id,
+                WorkspaceMember.user_id == current_user.id,
+            )
+        )
+    ).scalar_one_or_none()
+    if membership is None:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this workspace",
+        )
+
     return FileResponse(Path(target))

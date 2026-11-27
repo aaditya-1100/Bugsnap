@@ -1,12 +1,105 @@
 import base64
 import hashlib
+import hmac
+import json
+import re
+import secrets
+import time
 from urllib.parse import urlencode
+from uuid import UUID
 
 import httpx
 from cryptography.fernet import Fernet, InvalidToken
 from fastapi import HTTPException, status
 
 from app.config import settings
+
+REPO_FULL_NAME_RE = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
+OAUTH_STATE_MAX_AGE_SECONDS = 600  # 10 minutes
+
+
+def sign_oauth_state(workspace_id: UUID, user_id: UUID) -> str:
+    payload = {
+        "w": str(workspace_id),
+        "u": str(user_id),
+        "t": int(time.time()),
+        "n": secrets.token_hex(8),
+    }
+    payload_bytes = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+    payload_b64 = base64.urlsafe_b64encode(payload_bytes).decode("ascii").rstrip("=")
+    sig = hmac.new(
+        settings.SECRET_KEY.encode("utf-8"),
+        payload_b64.encode("ascii"),
+        hashlib.sha256,
+    ).hexdigest()
+    return f"{payload_b64}.{sig}"
+
+
+def verify_oauth_state(
+    state: str,
+    expected_user_id: UUID,
+    max_age_seconds: int = OAUTH_STATE_MAX_AGE_SECONDS,
+) -> UUID:
+    try:
+        payload_b64, sig = state.split(".", 1)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid OAuth state.",
+        ) from exc
+
+    expected_sig = hmac.new(
+        settings.SECRET_KEY.encode("utf-8"),
+        payload_b64.encode("ascii"),
+        hashlib.sha256,
+    ).hexdigest()
+    if not hmac.compare_digest(sig, expected_sig):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid OAuth state signature.",
+        )
+
+    try:
+        padded = payload_b64 + "=" * (-len(payload_b64) % 4)
+        data = json.loads(base64.urlsafe_b64decode(padded.encode("ascii")).decode("utf-8"))
+        workspace_id = UUID(data["w"])
+        user_id = UUID(data["u"])
+        issued_at = int(data["t"])
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Malformed OAuth state.",
+        ) from exc
+
+    if user_id != expected_user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="OAuth state does not match authenticated user.",
+        )
+
+    now = int(time.time())
+    if now - issued_at > max_age_seconds or issued_at > now + 60:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Expired OAuth state.",
+        )
+
+    return workspace_id
+
+
+def validate_repo_full_name(repo_full_name: str) -> str:
+    if not REPO_FULL_NAME_RE.match(repo_full_name):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid GitHub repository name.",
+        )
+    owner, repo = repo_full_name.split("/", 1)
+    if owner in {".", ".."} or repo in {".", ".."}:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid GitHub repository name.",
+        )
+    return repo_full_name
 
 
 def _get_fernet() -> Fernet:
@@ -124,6 +217,7 @@ async def create_github_issue(
     body: str,
     labels: list[str] | None = None,
 ) -> dict:
+    validate_repo_full_name(repo_full_name)
     payload: dict = {"title": title, "body": body}
     if labels:
         payload["labels"] = labels

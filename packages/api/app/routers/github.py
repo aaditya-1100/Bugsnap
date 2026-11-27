@@ -21,6 +21,9 @@ from app.services.github_service import (
     fetch_github_user,
     get_github_oauth_url,
     list_github_repos,
+    sign_oauth_state,
+    validate_repo_full_name,
+    verify_oauth_state,
 )
 
 router = APIRouter(tags=["github"])
@@ -28,7 +31,8 @@ router = APIRouter(tags=["github"])
 
 class GitHubCallbackRequest(BaseModel):
     code: str
-    workspace_id: UUID
+    workspace_id: UUID | None = None
+    state: str | None = None
 
 
 class GitHubExportRequest(BaseModel):
@@ -39,9 +43,11 @@ class GitHubExportRequest(BaseModel):
 @router.get("/api/github/auth-url")
 async def github_auth_url(
     workspace_id: UUID = Query(...),
-    _: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user),
+    _: WorkspaceMember = Depends(require_workspace_member),
 ) -> dict:
-    return {"url": get_github_oauth_url(state=str(workspace_id))}
+    state = sign_oauth_state(workspace_id, current_user.id)
+    return {"url": get_github_oauth_url(state=state)}
 
 
 @router.post("/api/github/callback")
@@ -50,10 +56,25 @@ async def github_callback(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
+    if body.state is not None:
+        workspace_id = verify_oauth_state(body.state, current_user.id)
+        if body.workspace_id is not None and body.workspace_id != workspace_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Workspace mismatch in OAuth state.",
+            )
+    elif body.workspace_id is not None:
+        workspace_id = body.workspace_id
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Missing OAuth state or workspace_id.",
+        )
+
     membership = (
         await db.execute(
             select(WorkspaceMember).where(
-                WorkspaceMember.workspace_id == body.workspace_id,
+                WorkspaceMember.workspace_id == workspace_id,
                 WorkspaceMember.user_id == current_user.id,
             )
         )
@@ -66,7 +87,7 @@ async def github_callback(
     gh_user = await fetch_github_user(access_token)
 
     conn = GitHubConnection(
-        workspace_id=body.workspace_id,
+        workspace_id=workspace_id,
         user_id=current_user.id,
         github_user_id=str(gh_user["id"]),
         github_username=gh_user["login"],
@@ -137,6 +158,8 @@ async def export_report_to_github(
     _: WorkspaceMember = Depends(require_workspace_member),
     db: AsyncSession = Depends(get_db),
 ) -> ReportResponse:
+    validate_repo_full_name(body.repo_full_name)
+
     res = await db.execute(
         select(Report)
         .options(selectinload(Report.attachments))

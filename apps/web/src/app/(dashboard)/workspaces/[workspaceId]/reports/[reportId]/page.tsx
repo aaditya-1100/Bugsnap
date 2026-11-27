@@ -87,6 +87,11 @@ export default function ReportDetailPage() {
         setRepos(repoList);
         if (repoList[0]) setSelectedRepo(repoList[0].full_name);
       })
+      .catch((err) => {
+        setError(
+          err instanceof ApiError ? err.message : "Failed to load report"
+        );
+      })
       .finally(() => setLoading(false));
   }, [workspaceId, reportId]);
 
@@ -222,7 +227,15 @@ export default function ReportDetailPage() {
   }
 
   if (loading) return <LoadingSkeleton rows={5} />;
-  if (!report) return <div className="text-sm text-zinc-400">Report not found.</div>;
+  if (!report) {
+    return error ? (
+      <div className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+        {error}
+      </div>
+    ) : (
+      <div className="text-sm text-zinc-400">Report not found.</div>
+    );
+  }
 
   const missingInfo =
     (report.ai_generated_content?.missing_information as string[] | undefined) ||

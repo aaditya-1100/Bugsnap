@@ -10,7 +10,7 @@ const KEYS = {
   PENDING_CAPTURE: "bugsnap_pending_capture",
 } as const;
 
-export const DEFAULT_API_URL = "http://localhost:8000";
+export const DEFAULT_API_URL = "https://bugsnap-api-sandy.vercel.app";
 
 export async function getAuthSession(): Promise<{
   token: string | null;

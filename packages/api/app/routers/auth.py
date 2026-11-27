@@ -16,6 +16,7 @@ from app.services.auth_service import (
     create_access_token,
     create_user,
     get_user_by_email,
+    get_user_by_id,
     verify_password,
 )
 
@@ -70,8 +71,11 @@ async def update_me(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ) -> UserResponse:
+    user = await get_user_by_id(db, current_user.id)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
     if body.full_name is not None:
-        current_user.full_name = body.full_name.strip() or None
+        user.full_name = body.full_name.strip() or None
     await db.flush()
-    await db.refresh(current_user)
-    return UserResponse.model_validate(current_user)
+    await db.refresh(user)
+    return UserResponse.model_validate(user)

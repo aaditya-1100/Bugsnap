@@ -23,7 +23,8 @@ export function getStoredToken(): string | null {
 export function setStoredToken(token: string): void {
   if (typeof window === "undefined") return;
   localStorage.setItem(TOKEN_KEY, token);
-  document.cookie = `${TOKEN_KEY}=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`;
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = `${TOKEN_KEY}=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax${secure}`;
 }
 
 export function clearStoredToken(): void {
@@ -329,13 +330,14 @@ export class BugSnapAPI {
     );
   }
 
-  async completeGitHubCallback(
-    workspaceId: string,
-    code: string
-  ): Promise<{ connected: boolean; github_username: string }> {
+  async completeGitHubCallback(data: {
+    code: string;
+    state?: string;
+    workspace_id?: string;
+  }): Promise<{ connected: boolean; github_username: string; workspace_id: string }> {
     return this.request("/api/github/callback", {
       method: "POST",
-      body: JSON.stringify({ workspace_id: workspaceId, code }),
+      body: JSON.stringify(data),
     });
   }
 

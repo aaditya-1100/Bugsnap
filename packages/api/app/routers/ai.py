@@ -3,12 +3,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from uuid import UUID
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+from app.config import settings
 from app.database import get_db
 from app.dependencies import get_current_user, require_workspace_member
 from app.middleware.rate_limit import rate_limit_ai
@@ -68,9 +70,35 @@ async def _generate_and_save(
         if first.file_path.startswith("/api/attachments/files/"):
             rel = first.file_path.removeprefix("/api/attachments/files/")
             local_file = (LOCAL_UPLOAD_DIR / rel).resolve()
-            if str(local_file).startswith(str(LOCAL_UPLOAD_DIR)) and local_file.is_file():
+            if local_file.is_relative_to(LOCAL_UPLOAD_DIR) and local_file.is_file():
                 screenshot_b64 = base64.b64encode(Path(local_file).read_bytes()).decode("ascii")
                 screenshot_mime = first.file_type
+        elif (
+            settings.SUPABASE_URL
+            and first.file_path.startswith("https://")
+            and first.file_path.startswith(settings.SUPABASE_URL.rstrip("/") + "/")
+        ):
+            max_bytes = 10 * 1024 * 1024  # 10 MB
+            try:
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    async with client.stream("GET", first.file_path) as resp:
+                        if resp.status_code == 200:
+                            content_len = resp.headers.get("content-length")
+                            if not (content_len and int(content_len) > max_bytes):
+                                chunks: list[bytes] = []
+                                total = 0
+                                too_large = False
+                                async for chunk in resp.aiter_bytes():
+                                    total += len(chunk)
+                                    if total > max_bytes:
+                                        too_large = True
+                                        break
+                                    chunks.append(chunk)
+                                if not too_large:
+                                    screenshot_b64 = base64.b64encode(b"".join(chunks)).decode("ascii")
+                                    screenshot_mime = first.file_type
+            except (httpx.HTTPError, ValueError):
+                pass
 
     provider = get_ai_provider()
     structured, in_tokens, out_tokens = await provider.generate_report(
