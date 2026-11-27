@@ -361,16 +361,6 @@ export default function App() {
               {authError}
             </div>
           ) : null}
-          <div className="space-y-1">
-            <label className="text-xs text-zinc-300">API URL</label>
-            <input
-              type="url"
-              value={apiUrl}
-              onChange={(e) => setApiUrl(e.target.value)}
-              className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-100"
-              required
-            />
-          </div>
           {authMode === "signup" ? (
             <div className="space-y-1">
               <label className="text-xs text-zinc-300">Full name</label>
