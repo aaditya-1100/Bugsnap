@@ -26,6 +26,10 @@ async def health_check(db: bool = False) -> dict:
             sanitized = re.sub(r"://[^@\s]+@", "://***@", str(exc).split("\n")[0])
             payload["status"] = "degraded"
             payload["database"] = "error"
+            payload["db_driver"] = engine.url.drivername
+            payload["db_host"] = engine.url.host
+            payload["db_port"] = engine.url.port
+            payload["db_query_keys"] = list(engine.url.query.keys())
             payload["db_error_type"] = type(exc).__name__
             payload["db_error"] = sanitized[:300]
     return payload
