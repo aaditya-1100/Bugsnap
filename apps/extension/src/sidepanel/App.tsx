@@ -4,6 +4,8 @@ import {
   Camera,
   CheckCircle2,
   Crop,
+  Eye,
+  EyeOff,
   LogOut,
   Send,
   ShieldCheck,
@@ -59,6 +61,7 @@ export default function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
 
@@ -393,20 +396,34 @@ export default function App() {
           </div>
           <div className="space-y-1">
             <label className="text-xs text-zinc-300">Password</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={authMode === "signup" ? "Min. 8 characters" : "••••••••"}
-              className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-100"
-              required
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder={authMode === "signup" ? "Min. 8 characters" : "••••••••"}
+                className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 pr-8 text-xs text-zinc-100"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-3.5 w-3.5" />
+                ) : (
+                  <Eye className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </div>
           </div>
           {authMode === "signup" ? (
             <div className="space-y-1">
               <label className="text-xs text-zinc-300">Confirm password</label>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
