@@ -53,25 +53,37 @@ export default function DashboardPage() {
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-[#71767b]">
-              Quick Access
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {workspaces[0] ? (
-              <Link
-                href={`/workspaces/${workspaces[0].id}/reports`}
-                className="text-sm font-medium text-white underline-offset-4 hover:underline"
-              >
-                Open latest reports →
-              </Link>
-            ) : (
+        {workspaces[0] ? (
+          <Link
+            href={`/workspaces/${workspaces[0].id}/reports`}
+            prefetch={true}
+            className="block"
+          >
+            <Card className="h-full cursor-pointer transition-all duration-150 hover:border-zinc-500 hover:bg-[#1d2025]">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-xs font-medium text-[#71767b]">
+                  Quick Access
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm font-medium text-white">
+                  Open latest reports →
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        ) : (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-xs font-medium text-[#71767b]">
+                Quick Access
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
               <span className="text-sm text-[#71767b]">No workspace yet</span>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {workspaces.length === 0 ? (

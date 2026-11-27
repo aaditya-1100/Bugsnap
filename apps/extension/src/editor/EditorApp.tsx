@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle2, Send, ShieldCheck, X } from "lucide-react";
+import { CheckCircle2, ChevronDown, Send, ShieldCheck, X } from "lucide-react";
 
 import {
   ExtensionApiError,
@@ -234,40 +234,46 @@ export default function EditorApp() {
             <div className="grid grid-cols-2 gap-2.5">
               <div className="space-y-1">
                 <label className="text-xs text-[#71767b]">Workspace</label>
-                <select
-                  value={workspaceId}
-                  onChange={(e) => handleWorkspaceChange(e.target.value)}
-                  className="w-full rounded-lg border border-[#2f3336] bg-black px-2.5 py-2 text-xs text-white"
-                  required
-                >
-                  {workspaces.map((w) => (
-                    <option key={w.id} value={w.id}>
-                      {w.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative">
+                  <select
+                    value={workspaceId}
+                    onChange={(e) => handleWorkspaceChange(e.target.value)}
+                    className="w-full appearance-none rounded-lg border border-[#2f3336] bg-black px-3 py-2 pr-7 text-xs text-white transition-colors hover:border-zinc-500 focus:border-white focus:outline-none"
+                    required
+                  >
+                    {workspaces.map((w) => (
+                      <option key={w.id} value={w.id} className="bg-[#16181c] text-white">
+                        {w.name}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#71767b]" />
+                </div>
               </div>
               <div className="space-y-1">
                 <label className="text-xs text-[#71767b]">Project</label>
-                <select
-                  value={projectId}
-                  onChange={(e) => {
-                    setProjectId(e.target.value);
-                    setSelectionPrefs({ projectId: e.target.value });
-                  }}
-                  className="w-full rounded-lg border border-[#2f3336] bg-black px-2.5 py-2 text-xs text-white"
-                  required
-                >
-                  {projects.length === 0 ? (
-                    <option value="">No projects</option>
-                  ) : (
-                    projects.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))
-                  )}
-                </select>
+                <div className="relative">
+                  <select
+                    value={projectId}
+                    onChange={(e) => {
+                      setProjectId(e.target.value);
+                      setSelectionPrefs({ projectId: e.target.value });
+                    }}
+                    className="w-full appearance-none rounded-lg border border-[#2f3336] bg-black px-3 py-2 pr-7 text-xs text-white transition-colors hover:border-zinc-500 focus:border-white focus:outline-none"
+                    required
+                  >
+                    {projects.length === 0 ? (
+                      <option value="" className="bg-[#16181c] text-white">No projects</option>
+                    ) : (
+                      projects.map((p) => (
+                        <option key={p.id} value={p.id} className="bg-[#16181c] text-white">
+                          {p.name}
+                        </option>
+                      ))
+                    )}
+                  </select>
+                  <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#71767b]" />
+                </div>
               </div>
             </div>
 
@@ -297,17 +303,20 @@ export default function EditorApp() {
 
             <div className="space-y-1">
               <label className="text-xs text-[#71767b]">Severity</label>
-              <select
-                value={severity}
-                onChange={(e) => setSeverity(e.target.value)}
-                className="w-full rounded-lg border border-[#2f3336] bg-black px-3 py-2 text-xs text-white"
-              >
-                <option value="critical">Critical</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-                <option value="unknown">Unknown</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={severity}
+                  onChange={(e) => setSeverity(e.target.value)}
+                  className="w-full appearance-none rounded-lg border border-[#2f3336] bg-black px-3 py-2 pr-8 text-xs text-white transition-colors hover:border-zinc-500 focus:border-white focus:outline-none"
+                >
+                  <option value="critical" className="bg-[#16181c] text-white">Critical</option>
+                  <option value="high" className="bg-[#16181c] text-white">High</option>
+                  <option value="medium" className="bg-[#16181c] text-white">Medium</option>
+                  <option value="low" className="bg-[#16181c] text-white">Low</option>
+                  <option value="unknown" className="bg-[#16181c] text-white">Unknown</option>
+                </select>
+                <ChevronDown className="pointer-events-none absolute right-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#71767b]" />
+              </div>
             </div>
 
             {capture ? (

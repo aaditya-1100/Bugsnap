@@ -17,7 +17,7 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      "flex h-9 w-full items-center justify-between whitespace-nowrap rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 shadow-sm placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50",
+      "flex h-9 w-full items-center justify-between whitespace-nowrap rounded-lg border border-[#2f3336] bg-black px-3 py-2 text-sm text-white shadow-sm transition-colors placeholder:text-[#71767b] hover:border-zinc-500 focus:outline-none focus:ring-1 focus:ring-white disabled:cursor-not-allowed disabled:opacity-50",
       className
     )}
     {...props}
@@ -38,14 +38,14 @@ const SelectContent = React.forwardRef<
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border border-zinc-800 bg-zinc-900 text-zinc-50 shadow-md",
+        "relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-xl border border-[#2f3336] bg-[#16181c] text-[#e7e9ea] shadow-2xl",
         position === "popper" && "translate-y-1",
         className
       )}
       position={position}
       {...props}
     >
-      <SelectPrimitive.Viewport className="p-1">
+      <SelectPrimitive.Viewport className="p-1.5">
         {children}
       </SelectPrimitive.Viewport>
     </SelectPrimitive.Content>
@@ -60,7 +60,7 @@ const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      "relative flex w-full cursor-pointer select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-zinc-800 focus:text-zinc-50 data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "relative flex w-full cursor-pointer select-none items-center rounded-lg py-2 pl-3 pr-8 text-sm outline-none transition-colors focus:bg-[#202327] focus:text-white data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
       className
     )}
     {...props}
