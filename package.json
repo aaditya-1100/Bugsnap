@@ -4,6 +4,7 @@
   "private": true,
   "description": "Visual bug reporting SaaS — capture, annotate, report.",
   "scripts": {
+    "build": "pnpm --filter @bugsnap/web build",
     "dev:web": "pnpm --filter @bugsnap/web dev",
     "dev:ext": "pnpm --filter @bugsnap/extension dev",
     "build:web": "pnpm --filter @bugsnap/web build",
