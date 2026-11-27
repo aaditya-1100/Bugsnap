@@ -1,29 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bug, FolderKanban, Layers, Plus } from "lucide-react";
 
+import { useDashboard } from "@/components/layout/dashboard-context";
 import { EmptyState } from "@/components/shared/empty-state";
-import { LoadingSkeleton } from "@/components/shared/loading";
 import { PageHeader } from "@/components/shared/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { api } from "@/lib/api";
-import type { Workspace } from "@/lib/types";
 
 export default function DashboardPage() {
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    api
-      .getWorkspaces()
-      .then(setWorkspaces)
-      .catch(() => setWorkspaces([]))
-      .finally(() => setLoading(false));
-  }, []);
+  const { workspaces } = useDashboard();
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -43,41 +31,50 @@ export default function DashboardPage() {
       <div className="grid gap-4 sm:grid-cols-3">
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-zinc-400">
+            <CardTitle className="text-xs font-medium text-[#71767b]">
               Workspaces
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold text-zinc-50">
+            <div className="text-2xl font-semibold text-white">
               {workspaces.length}
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-zinc-400">
-              Open Reports
+            <CardTitle className="text-xs font-medium text-[#71767b]">
+              Active Plan
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold text-zinc-50">0</div>
+            <div className="text-2xl font-semibold capitalize text-white">
+              {workspaces[0]?.plan || "Free"}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-xs font-medium text-zinc-400">
-              Resolved This Week
+            <CardTitle className="text-xs font-medium text-[#71767b]">
+              Quick Access
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-semibold text-zinc-50">0</div>
+            {workspaces[0] ? (
+              <Link
+                href={`/workspaces/${workspaces[0].id}/reports`}
+                className="text-sm font-medium text-white underline-offset-4 hover:underline"
+              >
+                Open latest reports →
+              </Link>
+            ) : (
+              <span className="text-sm text-[#71767b]">No workspace yet</span>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {loading ? (
-        <LoadingSkeleton rows={3} />
-      ) : workspaces.length === 0 ? (
+      {workspaces.length === 0 ? (
         <EmptyState
           icon={Layers}
           title="Create your first workspace"
@@ -93,17 +90,19 @@ export default function DashboardPage() {
         />
       ) : (
         <div className="space-y-3">
-          <h2 className="text-sm font-medium text-zinc-300">Your workspaces</h2>
+          <h2 className="text-sm font-medium text-[#e7e9ea]">
+            Your workspaces
+          </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             {workspaces.map((ws) => (
-              <Link key={ws.id} href={`/workspaces/${ws.id}`}>
-                <Card className="transition-colors hover:border-zinc-700 hover:bg-zinc-900">
+              <Link key={ws.id} href={`/workspaces/${ws.id}`} prefetch={true}>
+                <Card className="transition-all duration-150 hover:border-zinc-600 hover:bg-[#1d2025]">
                   <CardContent className="flex items-center justify-between p-4">
                     <div className="min-w-0">
-                      <div className="truncate text-sm font-semibold text-zinc-100">
+                      <div className="truncate text-sm font-semibold text-white">
                         {ws.name}
                       </div>
-                      <div className="mt-0.5 text-xs text-zinc-500">
+                      <div className="mt-0.5 text-xs text-[#71767b]">
                         /{ws.slug}
                       </div>
                     </div>
@@ -118,19 +117,19 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <Card className="border-zinc-800/70 bg-zinc-900/40">
+      <Card>
         <CardContent className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center">
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-zinc-800 bg-black text-white">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-[#2f3336] bg-black text-white">
               <Bug className="h-4 w-4" />
             </div>
             <div>
-              <div className="text-sm font-medium text-zinc-100">
+              <div className="text-sm font-medium text-white">
                 BugSnap Capture Chrome Extension
               </div>
-              <p className="mt-0.5 text-xs text-zinc-400">
-                Load <code className="text-zinc-300">apps/extension/dist</code>{" "}
-                in Chrome to capture, annotate, and redact screenshots.
+              <p className="mt-0.5 text-xs text-[#71767b]">
+                Capture or snip any webpage, pixelate sensitive info, and open
+                directly in the full-screen editor.
               </p>
             </div>
           </div>

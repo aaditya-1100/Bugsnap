@@ -44,9 +44,9 @@ class AIProvider(ABC):
 
 
 class GeminiProvider(AIProvider):
-    """Google Gemini 2.0 Flash implementation using the REST API."""
+    """Google Gemini Flash implementation using the REST API."""
 
-    model_name = "gemini-2.0-flash"
+    model_name = "gemini-2.5-flash"
 
     def __init__(self, api_key: str) -> None:
         self.api_key = api_key
@@ -109,15 +109,27 @@ class GeminiProvider(AIProvider):
         async with httpx.AsyncClient(timeout=30.0) as client:
             resp = await client.post(url, json=payload)
 
+        if resp.status_code in (401, 403):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid GEMINI_API_KEY. Create a free API key (starts with 'AIza') at aistudio.google.com/apikey and update packages/api/.env.",
+            )
         if resp.status_code == 429:
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
                 detail="AI provider rate limit reached. Please wait a moment and try again.",
             )
         if resp.status_code != 200:
+            err_msg = "AI provider returned an error while generating the report."
+            try:
+                err_data = resp.json()
+                if err_data.get("error", {}).get("message"):
+                    err_msg = f"AI provider error: {err_data['error']['message']}"
+            except Exception:
+                pass
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail="AI provider returned an error while generating the report.",
+                detail=err_msg,
             )
 
         data = resp.json()

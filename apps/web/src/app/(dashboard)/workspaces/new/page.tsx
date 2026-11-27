@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { useDashboard } from "@/components/layout/dashboard-context";
 import { PageHeader } from "@/components/shared/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { ApiError, api } from "@/lib/api";
 
 export default function NewWorkspacePage() {
   const router = useRouter();
+  const { refreshWorkspaces } = useDashboard();
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -23,8 +25,8 @@ export default function NewWorkspacePage() {
     setLoading(true);
     try {
       const ws = await api.createWorkspace({ name: name.trim() });
+      await refreshWorkspaces();
       router.push(`/workspaces/${ws.id}`);
-      router.refresh();
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Failed to create workspace."

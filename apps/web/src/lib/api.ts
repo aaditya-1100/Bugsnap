@@ -124,6 +124,13 @@ export class BugSnapAPI {
     return this.request<User>("/api/auth/me");
   }
 
+  async updateMe(data: { full_name?: string }): Promise<User> {
+    return this.request<User>("/api/auth/me", {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+
   async getWorkspaces(): Promise<Workspace[]> {
     return this.request<Workspace[]>("/api/workspaces");
   }
