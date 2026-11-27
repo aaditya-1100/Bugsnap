@@ -80,7 +80,7 @@ async def _generate_and_save(
         ):
             max_bytes = 10 * 1024 * 1024  # 10 MB
             try:
-                async with httpx.AsyncClient(timeout=10.0) as client:
+                async with httpx.AsyncClient(timeout=10.0, follow_redirects=False) as client:
                     async with client.stream("GET", first.file_path) as resp:
                         if resp.status_code == 200:
                             content_len = resp.headers.get("content-length")

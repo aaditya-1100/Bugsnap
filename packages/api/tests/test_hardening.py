@@ -308,3 +308,144 @@ async def test_ai_fetches_supabase_https_attachment(monkeypatch):
         assert res.status_code == 200
         assert len(captured_contexts) == 1
         assert captured_contexts[0].screenshot_base64 == base64.b64encode(b"RIFFxxxxWEBP").decode("ascii")
+
+
+@pytest.mark.asyncio
+async def test_patch_auth_me_persists_full_name():
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        reg = await client.post(
+            "/api/auth/register",
+            json={"email": "patch-me@bugsnap.dev", "password": "password123", "full_name": "Before"},
+        )
+        assert reg.status_code == 201
+        headers = {"Authorization": f"Bearer {reg.json()['access_token']}"}
+
+        patch_res = await client.patch(
+            "/api/auth/me",
+            json={"full_name": "After Update"},
+            headers=headers,
+        )
+        assert patch_res.status_code == 200
+        assert patch_res.json()["full_name"] == "After Update"
+
+        me_res = await client.get("/api/auth/me", headers=headers)
+        assert me_res.status_code == 200
+        assert me_res.json()["full_name"] == "After Update"
+
+
+@pytest.mark.asyncio
+async def test_ai_rejects_non_supabase_https_and_oversized_attachments(monkeypatch):
+    monkeypatch.setattr("app.routers.ai.settings.SUPABASE_URL", "https://proj.supabase.co")
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+        owner = await client.post(
+            "/api/auth/register",
+            json={"email": "ai-ssrf@bugsnap.dev", "password": "password123"},
+        )
+        h_owner = {"Authorization": f"Bearer {owner.json()['access_token']}"}
+        ws = (await client.post("/api/workspaces", json={"name": "SSRF WS"}, headers=h_owner)).json()
+        ws_id = ws["id"]
+        proj = (
+            await client.post(
+                f"/api/workspaces/{ws_id}/projects",
+                json={"name": "SSRF App"},
+                headers=h_owner,
+            )
+        ).json()
+        rep_ssrf = (
+            await client.post(
+                f"/api/workspaces/{ws_id}/reports",
+                json={"project_id": proj["id"], "title": "SSRF Bug"},
+                headers=h_owner,
+            )
+        ).json()
+        rep_big = (
+            await client.post(
+                f"/api/workspaces/{ws_id}/reports",
+                json={"project_id": proj["id"], "title": "Big Bug"},
+                headers=h_owner,
+            )
+        ).json()
+
+        async with AsyncSessionLocal() as db:
+            db.add(
+                ReportAttachment(
+                    report_id=UUID(rep_ssrf["id"]),
+                    file_name="evil.webp",
+                    file_path="https://evil.example.com/secret.webp",
+                    file_type="image/webp",
+                    file_size=12,
+                    content_type="screenshot",
+                    metadata_json={},
+                )
+            )
+            db.add(
+                ReportAttachment(
+                    report_id=UUID(rep_big["id"]),
+                    file_name="big.webp",
+                    file_path="https://proj.supabase.co/storage/v1/object/public/bugsnap-attachments/big.webp",
+                    file_type="image/webp",
+                    file_size=11 * 1024 * 1024,
+                    content_type="screenshot",
+                    metadata_json={},
+                )
+            )
+            await db.commit()
+
+        captured_contexts = []
+        mock_structured = StructuredReport(
+            title="AI Title",
+            description="Desc",
+            observed_behavior="Obs",
+            expected_behavior="Exp",
+            reproduction_steps=["Step 1"],
+            suggested_severity="medium",
+            severity_rationale="Reason",
+            evidence_references=["Screenshot"],
+            missing_information=[],
+        )
+
+        async def fake_generate(ctx):
+            captured_contexts.append(ctx)
+            return mock_structured, 10, 10
+
+        provider = MagicMock()
+        provider.model_name = "gemini-2.5-flash"
+        provider.generate_report = AsyncMock(side_effect=fake_generate)
+
+        stream_calls = []
+
+        @asynccontextmanager
+        async def fake_stream(method, url):
+            stream_calls.append(url)
+            resp = MagicMock()
+            resp.status_code = 200
+            resp.headers = {}
+
+            async def aiter_bytes():
+                yield b"A" * (6 * 1024 * 1024)
+                yield b"B" * (5 * 1024 * 1024)
+
+            resp.aiter_bytes = aiter_bytes
+            yield resp
+
+        with patch("app.routers.ai.get_ai_provider", return_value=provider), patch(
+            "app.routers.ai.httpx.AsyncClient.stream", side_effect=fake_stream
+        ):
+            r1 = await client.post(
+                f"/api/workspaces/{ws_id}/reports/{rep_ssrf['id']}/ai/generate",
+                headers=h_owner,
+            )
+            assert r1.status_code == 200
+            assert stream_calls == []
+
+            r2 = await client.post(
+                f"/api/workspaces/{ws_id}/reports/{rep_big['id']}/ai/generate",
+                headers=h_owner,
+            )
+            assert r2.status_code == 200
+            assert len(stream_calls) == 1
+
+        assert len(captured_contexts) == 2
+        assert captured_contexts[0].screenshot_base64 is None
+        assert captured_contexts[1].screenshot_base64 is None
