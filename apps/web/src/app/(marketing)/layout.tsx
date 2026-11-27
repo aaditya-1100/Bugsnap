@@ -9,11 +9,11 @@ export default function MarketingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-950 text-zinc-50">
-      <header className="sticky top-0 z-40 border-b border-zinc-800/70 bg-zinc-950/85 backdrop-blur-md">
+    <div className="flex min-h-screen flex-col bg-black text-zinc-50">
+      <header className="sticky top-0 z-40 border-b border-zinc-800/80 bg-black/85 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-violet-600 text-white">
+            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-white text-black">
               <Bug className="h-4 w-4" />
             </div>
             <span className="text-sm font-semibold tracking-tight">

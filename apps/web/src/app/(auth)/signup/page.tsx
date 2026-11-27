@@ -123,7 +123,7 @@ export default function SignupPage() {
           </Button>
           <p className="text-center text-xs text-zinc-400">
             Already have an account?{" "}
-            <Link href="/login" className="text-violet-400 hover:underline">
+            <Link href="/login" className="text-white underline-offset-4 hover:underline">
               Sign in
             </Link>
           </p>

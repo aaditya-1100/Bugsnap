@@ -88,7 +88,7 @@ export default function LandingPage() {
             return (
               <Card key={step.title} className="border-zinc-800/70 bg-zinc-900/40">
                 <CardContent className="pt-5">
-                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-md border border-zinc-800 bg-zinc-950 text-violet-400">
+                  <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-md border border-zinc-800 bg-black text-white">
                     <Icon className="h-4 w-4" />
                   </div>
                   <h3 className="text-sm font-semibold text-zinc-100">

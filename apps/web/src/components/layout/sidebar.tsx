@@ -71,10 +71,10 @@ export function Sidebar({
   ];
 
   return (
-    <aside className="flex h-screen w-60 shrink-0 flex-col border-r border-zinc-800/80 bg-zinc-950">
+    <aside className="flex h-screen w-60 shrink-0 flex-col border-r border-zinc-800/80 bg-black">
       <div className="flex h-14 items-center gap-2 border-b border-zinc-800/80 px-4">
         <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-violet-600 text-white">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-white text-black">
             <Bug className="h-4 w-4" />
           </div>
           <span className="text-sm font-semibold tracking-tight text-zinc-50">

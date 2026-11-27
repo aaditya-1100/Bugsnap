@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "description": "Capture, annotate, redact, and report website bugs to GitHub in under two minutes.",
   "permissions": ["activeTab", "sidePanel", "storage", "scripting"],
+  "host_permissions": ["<all_urls>"],
   "side_panel": {
     "default_path": "sidepanel.html"
   },

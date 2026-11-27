@@ -43,7 +43,7 @@ export default function SharedReportPage() {
     <div className="mx-auto max-w-4xl space-y-6 px-6 py-10">
       <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
         <div className="flex items-center gap-2 text-sm font-semibold">
-          <Bug className="h-4 w-4 text-violet-400" />
+          <Bug className="h-4 w-4 text-white" />
           BugSnap Shared Report
         </div>
         <div className="flex items-center gap-2">

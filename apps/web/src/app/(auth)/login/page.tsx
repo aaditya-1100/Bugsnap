@@ -87,7 +87,7 @@ export default function LoginPage() {
           </Button>
           <p className="text-center text-xs text-zinc-400">
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="text-violet-400 hover:underline">
+            <Link href="/signup" className="text-white underline-offset-4 hover:underline">
               Create one
             </Link>
           </p>

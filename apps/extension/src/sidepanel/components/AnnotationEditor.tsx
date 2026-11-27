@@ -238,7 +238,7 @@ export const AnnotationEditor = forwardRef<
                 onClick={() => setTool(t.id)}
                 className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-medium transition-colors ${
                   active
-                    ? "bg-violet-600 text-white"
+                    ? "bg-white text-black"
                     : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"
                 }`}
               >

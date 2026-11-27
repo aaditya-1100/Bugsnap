@@ -204,7 +204,26 @@ export default function App() {
   async function handleCapture() {
     setSubmitError(null);
     try {
-      const dataUrl = await chrome.tabs.captureVisibleTab({ format: "png" });
+      const [activeTab] = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
+      if (
+        activeTab?.url &&
+        (activeTab.url.startsWith("chrome://") ||
+          activeTab.url.startsWith("edge://") ||
+          activeTab.url.startsWith("chrome-extension://"))
+      ) {
+        setSubmitError(
+          "Browser system pages (chrome://) cannot be captured. Switch to a regular website tab and try again."
+        );
+        return;
+      }
+
+      const dataUrl = await chrome.tabs.captureVisibleTab(
+        chrome.windows.WINDOW_ID_CURRENT,
+        { format: "png" }
+      );
       const ctx = await getActiveTabPageContext(consoleConsent);
       setCapture({
         dataUrl,
@@ -266,10 +285,10 @@ export default function App() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-950 p-4 text-zinc-50">
+    <div className="flex min-h-screen flex-col bg-black p-4 text-zinc-50">
       <header className="flex items-center justify-between border-b border-zinc-800 pb-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-violet-600 text-white">
+          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-white text-black">
             <Bug className="h-4 w-4" />
           </div>
           <span className="text-sm font-semibold tracking-tight">BugSnap</span>
@@ -372,7 +391,7 @@ export default function App() {
           <button
             type="submit"
             disabled={authLoading}
-            className="w-full rounded-md bg-violet-600 py-2 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-50"
+            className="w-full rounded-md bg-white py-2 text-xs font-semibold text-black hover:bg-zinc-200 disabled:opacity-50"
           >
             {authLoading
               ? authMode === "login"
@@ -392,7 +411,7 @@ export default function App() {
                     setAuthMode("signup");
                     setAuthError(null);
                   }}
-                  className="text-violet-400 hover:underline"
+                  className="text-white underline-offset-4 hover:underline"
                 >
                   Create an account
                 </button>
@@ -406,7 +425,7 @@ export default function App() {
                     setAuthMode("login");
                     setAuthError(null);
                   }}
-                  className="text-violet-400 hover:underline"
+                  className="text-white underline-offset-4 hover:underline"
                 >
                   Sign in
                 </button>
@@ -425,8 +444,8 @@ export default function App() {
             </div>
           ) : null}
 
-          <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 text-center">
-            <Camera className="mx-auto mb-2 h-6 w-6 text-violet-400" />
+          <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-4 text-center">
+            <Camera className="mx-auto mb-2 h-6 w-6 text-white" />
             <h1 className="text-sm font-semibold">Capture visible tab</h1>
             <p className="mt-1 text-xs text-zinc-400">
               Takes a screenshot of the current viewport. You can annotate and
@@ -435,14 +454,14 @@ export default function App() {
             <button
               type="button"
               onClick={handleCapture}
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-violet-600 px-3 py-2 text-xs font-medium text-white hover:bg-violet-500"
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-white px-3 py-2 text-xs font-semibold text-black hover:bg-zinc-200"
             >
               <Camera className="h-3.5 w-3.5" />
               Capture Screenshot
             </button>
           </div>
 
-          <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-zinc-800 bg-zinc-900/30 p-3 text-xs">
+          <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-xs">
             <input
               type="checkbox"
               checked={consoleConsent}
@@ -451,7 +470,7 @@ export default function App() {
                 setConsoleConsent(checked);
                 setSelectionPrefs({ consoleConsent: checked });
               }}
-              className="mt-0.5 rounded border-zinc-700 bg-zinc-900 text-violet-600"
+              className="mt-0.5 rounded border-zinc-700 bg-zinc-900 accent-white"
             />
             <div>
               <div className="font-medium text-zinc-200">
@@ -579,7 +598,7 @@ export default function App() {
             <button
               type="submit"
               disabled={submitting || !projectId}
-              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-violet-600 py-2 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-50"
+              className="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-white py-2 text-xs font-semibold text-black hover:bg-zinc-200 disabled:opacity-50"
             >
               <Send className="h-3.5 w-3.5" />
               {submitting ? "Submitting..." : "Submit Report"}
@@ -608,7 +627,7 @@ export default function App() {
               setCapture(null);
               setView("capture");
             }}
-            className="mt-4 w-full rounded-md bg-violet-600 py-2 text-xs font-medium text-white hover:bg-violet-500"
+            className="mt-4 w-full rounded-md bg-white py-2 text-xs font-semibold text-black hover:bg-zinc-200"
           >
             Capture another bug
           </button>

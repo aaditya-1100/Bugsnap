@@ -121,7 +121,7 @@ export default function DashboardPage() {
       <Card className="border-zinc-800/70 bg-zinc-900/40">
         <CardContent className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center">
           <div className="flex items-start gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-zinc-800 bg-zinc-950 text-violet-400">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-zinc-800 bg-black text-white">
               <Bug className="h-4 w-4" />
             </div>
             <div>

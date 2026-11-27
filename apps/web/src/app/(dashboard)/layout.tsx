@@ -52,7 +52,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-zinc-950 text-zinc-50">
+    <div className="flex min-h-screen bg-black text-zinc-50">
       <div className="hidden md:block">
         <Sidebar
           workspaces={workspaces}

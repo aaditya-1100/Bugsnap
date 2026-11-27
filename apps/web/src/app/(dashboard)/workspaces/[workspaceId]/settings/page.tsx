@@ -233,7 +233,7 @@ export default function WorkspaceSettingsPage() {
           {ghConnections.length > 0 ? (
             <div className="text-sm text-zinc-200">
               Connected as{" "}
-              <span className="font-semibold text-violet-400">
+              <span className="font-semibold text-white">
                 @{ghConnections[0].github_username}
               </span>
             </div>
