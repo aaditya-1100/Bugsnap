@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
-  Bug,
   Camera,
   CheckCircle2,
   LogOut,
@@ -288,9 +287,11 @@ export default function App() {
     <div className="flex min-h-screen flex-col bg-black p-4 text-zinc-50">
       <header className="flex items-center justify-between border-b border-zinc-800 pb-3">
         <div className="flex items-center gap-2">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-white text-black">
-            <Bug className="h-4 w-4" />
-          </div>
+          <img
+            src="/logo-icon.png"
+            alt="BugSnap"
+            className="h-7 w-7 rounded-md bg-white object-contain p-0.5"
+          />
           <span className="text-sm font-semibold tracking-tight">BugSnap</span>
         </div>
         {userEmail ? (

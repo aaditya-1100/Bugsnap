@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Bug } from "lucide-react";
 
 export default function AuthLayout({
   children,
@@ -9,9 +8,12 @@ export default function AuthLayout({
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-black px-4 py-12">
       <Link href="/" className="mb-8 flex items-center gap-2">
-        <div className="flex h-8 w-8 items-center justify-center rounded-md bg-white text-black">
-          <Bug className="h-4 w-4" />
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo-icon.png"
+          alt="BugSnap"
+          className="h-8 w-8 rounded-md bg-white object-contain p-0.5"
+        />
         <span className="text-base font-semibold tracking-tight text-zinc-50">
           BugSnap
         </span>

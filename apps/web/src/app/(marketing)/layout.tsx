@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Bug } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 
@@ -13,9 +12,12 @@ export default function MarketingLayout({
       <header className="sticky top-0 z-40 border-b border-zinc-800/80 bg-black/85 backdrop-blur-md">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-md bg-white text-black">
-              <Bug className="h-4 w-4" />
-            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo-icon.png"
+              alt="BugSnap"
+              className="h-7 w-7 rounded-md bg-white object-contain p-0.5"
+            />
             <span className="text-sm font-semibold tracking-tight">
               BugSnap
             </span>

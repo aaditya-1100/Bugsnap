@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Bug } from "lucide-react";
 
 import { LoadingSkeleton } from "@/components/shared/loading";
 import { Badge } from "@/components/ui/badge";
@@ -43,7 +42,12 @@ export default function SharedReportPage() {
     <div className="mx-auto max-w-4xl space-y-6 px-6 py-10">
       <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
         <div className="flex items-center gap-2 text-sm font-semibold">
-          <Bug className="h-4 w-4 text-white" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/logo-icon.png"
+            alt="BugSnap"
+            className="h-6 w-6 rounded bg-white object-contain p-0.5"
+          />
           BugSnap Shared Report
         </div>
         <div className="flex items-center gap-2">
