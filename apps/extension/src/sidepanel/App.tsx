@@ -11,9 +11,12 @@ import {
 
 import {
   ExtensionApiError,
+  createProjectExtension,
+  createWorkspaceExtension,
   fetchProjects,
   fetchWorkspaces,
   loginExtension,
+  registerExtension,
   submitBugReport,
 } from "../lib/api";
 import {
@@ -44,9 +47,12 @@ export default function App() {
   const [token, setToken] = useState<string | null>(null);
   const [userEmail, setUserEmail] = useState<string | null>(null);
 
-  // Login form
+  // Login / Signup form
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login");
+  const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
 
@@ -113,31 +119,63 @@ export default function App() {
     init();
   }, []);
 
-  async function handleLogin(e: React.FormEvent) {
+  async function handleAuthSubmit(e: React.FormEvent) {
     e.preventDefault();
     setAuthError(null);
+
+    if (authMode === "signup") {
+      if (password.length < 8) {
+        setAuthError("Password must be at least 8 characters.");
+        return;
+      }
+      if (password !== confirmPassword) {
+        setAuthError("Passwords do not match.");
+        return;
+      }
+    }
+
     setAuthLoading(true);
     try {
-      const res = await loginExtension(apiUrl, email, password);
+      const res =
+        authMode === "signup"
+          ? await registerExtension(apiUrl, email, password, fullName.trim())
+          : await loginExtension(apiUrl, email, password);
+
       await setAuthSession(res.access_token, res.user.email, apiUrl);
       setToken(res.access_token);
       setUserEmail(res.user.email);
 
-      const wsList = await fetchWorkspaces(apiUrl, res.access_token);
-      setWorkspaces(wsList);
-      const firstWs = wsList[0]?.id || "";
-      setWorkspaceId(firstWs);
-      if (firstWs) {
-        const projList = await fetchProjects(apiUrl, res.access_token, firstWs);
-        setProjects(projList);
-        setProjectId(projList[0]?.id || "");
+      let wsList = await fetchWorkspaces(apiUrl, res.access_token);
+      if (wsList.length === 0) {
+        const defaultWs = await createWorkspaceExtension(
+          apiUrl,
+          res.access_token,
+          "My Workspace"
+        );
+        wsList = [defaultWs];
       }
+      setWorkspaces(wsList);
+      const firstWs = wsList[0].id;
+      setWorkspaceId(firstWs);
+
+      let projList = await fetchProjects(apiUrl, res.access_token, firstWs);
+      if (projList.length === 0) {
+        const defaultProj = await createProjectExtension(
+          apiUrl,
+          res.access_token,
+          firstWs,
+          "Default Project"
+        );
+        projList = [defaultProj];
+      }
+      setProjects(projList);
+      setProjectId(projList[0].id);
       setView("capture");
     } catch (err) {
       setAuthError(
         err instanceof ExtensionApiError
           ? err.message
-          : "Cannot reach BugSnap API. Check API URL."
+          : `Cannot reach BugSnap API at ${apiUrl}. Make sure the backend server is running.`
       );
     } finally {
       setAuthLoading(false);
@@ -256,12 +294,18 @@ export default function App() {
       ) : null}
 
       {view === "login" ? (
-        <form onSubmit={handleLogin} className="mt-5 space-y-3">
-          <div>
-            <h1 className="text-sm font-semibold">Sign in to BugSnap</h1>
-            <p className="mt-0.5 text-xs text-zinc-400">
-              Connect the extension to your BugSnap account.
-            </p>
+        <form onSubmit={handleAuthSubmit} className="mt-5 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-sm font-semibold">
+                {authMode === "login" ? "Sign in to BugSnap" : "Create BugSnap account"}
+              </h1>
+              <p className="mt-0.5 text-xs text-zinc-400">
+                {authMode === "login"
+                  ? "Connect the extension to your BugSnap account."
+                  : "Sign up and start capturing bugs in seconds."}
+              </p>
+            </div>
           </div>
           {authError ? (
             <div className="rounded border border-red-500/30 bg-red-500/10 p-2 text-xs text-red-400">
@@ -278,6 +322,18 @@ export default function App() {
               required
             />
           </div>
+          {authMode === "signup" ? (
+            <div className="space-y-1">
+              <label className="text-xs text-zinc-300">Full name</label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Aaditya"
+                className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-100"
+              />
+            </div>
+          ) : null}
           <div className="space-y-1">
             <label className="text-xs text-zinc-300">Email</label>
             <input
@@ -295,18 +351,68 @@ export default function App() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder={authMode === "signup" ? "Min. 8 characters" : "••••••••"}
               className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-100"
               required
             />
           </div>
+          {authMode === "signup" ? (
+            <div className="space-y-1">
+              <label className="text-xs text-zinc-300">Confirm password</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="••••••••"
+                className="w-full rounded-md border border-zinc-800 bg-zinc-900 px-2.5 py-1.5 text-xs text-zinc-100"
+                required
+              />
+            </div>
+          ) : null}
           <button
             type="submit"
             disabled={authLoading}
             className="w-full rounded-md bg-violet-600 py-2 text-xs font-medium text-white hover:bg-violet-500 disabled:opacity-50"
           >
-            {authLoading ? "Signing in..." : "Sign in"}
+            {authLoading
+              ? authMode === "login"
+                ? "Signing in..."
+                : "Creating account..."
+              : authMode === "login"
+                ? "Sign in"
+                : "Create account"}
           </button>
+          <p className="text-center text-xs text-zinc-400">
+            {authMode === "login" ? (
+              <>
+                New to BugSnap?{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode("signup");
+                    setAuthError(null);
+                  }}
+                  className="text-violet-400 hover:underline"
+                >
+                  Create an account
+                </button>
+              </>
+            ) : (
+              <>
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode("login");
+                    setAuthError(null);
+                  }}
+                  className="text-violet-400 hover:underline"
+                >
+                  Sign in
+                </button>
+              </>
+            )}
+          </p>
         </form>
       ) : null}
 

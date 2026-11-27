@@ -62,6 +62,41 @@ export async function loginExtension(
   });
 }
 
+export async function registerExtension(
+  baseUrl: string,
+  email: string,
+  password: string,
+  fullName?: string
+): Promise<{ access_token: string; user: { email: string; full_name: string | null } }> {
+  return apiFetch(baseUrl, "/api/auth/register", null, {
+    method: "POST",
+    body: JSON.stringify({ email, password, full_name: fullName || undefined }),
+  });
+}
+
+export async function createWorkspaceExtension(
+  baseUrl: string,
+  token: string,
+  name: string
+): Promise<Workspace> {
+  return apiFetch(baseUrl, "/api/workspaces", token, {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+}
+
+export async function createProjectExtension(
+  baseUrl: string,
+  token: string,
+  workspaceId: string,
+  name: string
+): Promise<Project> {
+  return apiFetch(baseUrl, `/api/workspaces/${workspaceId}/projects`, token, {
+    method: "POST",
+    body: JSON.stringify({ name }),
+  });
+}
+
 export async function fetchWorkspaces(
   baseUrl: string,
   token: string
