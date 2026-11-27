@@ -42,7 +42,7 @@ async def save_attachment(
         )
     if file_size > MAX_FILE_SIZE_BYTES:
         raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
             detail="File exceeds maximum allowed size of 5 MB.",
         )
 
