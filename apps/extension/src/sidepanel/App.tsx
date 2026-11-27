@@ -3,6 +3,7 @@ import {
   AlertCircle,
   Camera,
   CheckCircle2,
+  Crop,
   LogOut,
   Send,
   ShieldCheck,
@@ -22,6 +23,11 @@ import {
   collectBrowserMetadata,
   getActiveTabPageContext,
 } from "../lib/metadata";
+import {
+  cropDataUrlToRegion,
+  injectedRegionSelector,
+  type SelectedRegion,
+} from "../lib/region-selector";
 import {
   clearAuthSession,
   DEFAULT_API_URL,
@@ -200,7 +206,7 @@ export default function App() {
     await setSelectionPrefs({ projectId: firstProj });
   }
 
-  async function handleCapture() {
+  async function handleCapture(mode: "full" | "region" = "full") {
     setSubmitError(null);
     try {
       const [activeTab] = await chrome.tabs.query({
@@ -208,10 +214,11 @@ export default function App() {
         currentWindow: true,
       });
       if (
-        activeTab?.url &&
-        (activeTab.url.startsWith("chrome://") ||
-          activeTab.url.startsWith("edge://") ||
-          activeTab.url.startsWith("chrome-extension://"))
+        !activeTab?.id ||
+        (activeTab.url &&
+          (activeTab.url.startsWith("chrome://") ||
+            activeTab.url.startsWith("edge://") ||
+            activeTab.url.startsWith("chrome-extension://")))
       ) {
         setSubmitError(
           "Browser system pages (chrome://) cannot be captured. Switch to a regular website tab and try again."
@@ -219,10 +226,27 @@ export default function App() {
         return;
       }
 
-      const dataUrl = await chrome.tabs.captureVisibleTab(
+      let region: SelectedRegion | null = null;
+      if (mode === "region") {
+        const [selectionResult] = await chrome.scripting.executeScript({
+          target: { tabId: activeTab.id },
+          func: injectedRegionSelector,
+        });
+        region = (selectionResult?.result as SelectedRegion | null) ?? null;
+        if (!region) {
+          // User pressed Esc or cancelled selection
+          return;
+        }
+      }
+
+      let dataUrl = await chrome.tabs.captureVisibleTab(
         chrome.windows.WINDOW_ID_CURRENT,
         { format: "png" }
       );
+      if (region) {
+        dataUrl = await cropDataUrlToRegion(dataUrl, region);
+      }
+
       const ctx = await getActiveTabPageContext(consoleConsent);
       setCapture({
         dataUrl,
@@ -447,19 +471,29 @@ export default function App() {
 
           <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-4 text-center">
             <Camera className="mx-auto mb-2 h-6 w-6 text-white" />
-            <h1 className="text-sm font-semibold">Capture visible tab</h1>
+            <h1 className="text-sm font-semibold">Capture screenshot</h1>
             <p className="mt-1 text-xs text-zinc-400">
-              Takes a screenshot of the current viewport. You can annotate and
-              redact before anything is uploaded.
+              Capture the full visible screen or drag a box to snip a specific
+              area.
             </p>
-            <button
-              type="button"
-              onClick={handleCapture}
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-white px-3 py-2 text-xs font-semibold text-black hover:bg-zinc-200"
-            >
-              <Camera className="h-3.5 w-3.5" />
-              Capture Screenshot
-            </button>
+            <div className="mt-4 space-y-2">
+              <button
+                type="button"
+                onClick={() => handleCapture("region")}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-white px-3 py-2 text-xs font-semibold text-black hover:bg-zinc-200"
+              >
+                <Crop className="h-3.5 w-3.5" />
+                Select Area (Snip)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleCapture("full")}
+                className="inline-flex w-full items-center justify-center gap-2 rounded-md border border-zinc-700 bg-black px-3 py-2 text-xs font-medium text-zinc-200 hover:bg-zinc-900"
+              >
+                <Camera className="h-3.5 w-3.5" />
+                Capture Visible Screen
+              </button>
+            </div>
           </div>
 
           <label className="flex cursor-pointer items-start gap-2.5 rounded-lg border border-zinc-800 bg-zinc-950 p-3 text-xs">
