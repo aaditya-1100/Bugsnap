@@ -96,10 +96,16 @@ class GeminiProvider(AIProvider):
                 }
             )
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key}"
+        if self.api_key.startswith("AQ."):
+            url = f"https://aiplatform.googleapis.com/v1/publishers/google/models/{self.model_name}:generateContent"
+            headers = {"x-goog-api-key": self.api_key}
+        else:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key}"
+            headers = {}
+
         payload = {
-            "system_instruction": {"parts": [{"text": system_instruction}]},
-            "contents": [{"parts": parts}],
+            "systemInstruction": {"parts": [{"text": system_instruction}]},
+            "contents": [{"role": "user", "parts": parts}],
             "generationConfig": {
                 "responseMimeType": "application/json",
                 "temperature": 0.2,
@@ -107,7 +113,7 @@ class GeminiProvider(AIProvider):
         }
 
         async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(url, json=payload)
+            resp = await client.post(url, json=payload, headers=headers)
 
         if resp.status_code in (401, 403):
             raise HTTPException(
