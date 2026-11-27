@@ -184,8 +184,8 @@ export default function EditorApp() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-black text-[#e7e9ea]">
-      <header className="flex h-14 items-center justify-between border-b border-[#2f3336] bg-black px-6">
+    <div className="flex min-h-screen flex-col bg-black text-[#e7e9ea] lg:h-screen lg:overflow-hidden">
+      <header className="flex h-13 shrink-0 items-center justify-between border-b border-[#2f3336] bg-black px-5 py-2.5">
         <div className="flex items-center gap-2.5">
           <img
             src="/logo-icon.png"
@@ -193,10 +193,7 @@ export default function EditorApp() {
             className="h-7 w-7 rounded-md bg-white object-contain p-0.5"
           />
           <span className="text-sm font-semibold tracking-tight text-white">
-            BugSnap Editor
-          </span>
-          <span className="rounded-full border border-[#2f3336] bg-[#16181c] px-2.5 py-0.5 text-[11px] text-[#71767b]">
-            Full Canvas
+            BugSnap
           </span>
         </div>
         <button
@@ -209,20 +206,17 @@ export default function EditorApp() {
         </button>
       </header>
 
-      <div className="flex flex-1 flex-col lg:flex-row">
-        <main className="flex-1 overflow-auto p-6">
-          <div className="mx-auto max-w-5xl">
-            {capture ? (
-              <AnnotationEditor
-                ref={editorRef}
-                imageDataUrl={capture.dataUrl}
-                maxWidth={960}
-              />
-            ) : null}
-          </div>
+      <div className="flex min-h-0 flex-1 flex-col lg:flex-row">
+        <main className="flex min-h-0 flex-1 flex-col p-4">
+          {capture ? (
+            <AnnotationEditor
+              ref={editorRef}
+              imageDataUrl={capture.dataUrl}
+            />
+          ) : null}
         </main>
 
-        <aside className="w-full shrink-0 border-t border-[#2f3336] bg-[#16181c] p-5 lg:w-[360px] lg:border-l lg:border-t-0">
+        <aside className="w-full shrink-0 overflow-y-auto border-t border-[#2f3336] bg-[#16181c] p-5 lg:w-[350px] lg:border-l lg:border-t-0">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <h2 className="text-sm font-semibold text-white">Bug Details</h2>
