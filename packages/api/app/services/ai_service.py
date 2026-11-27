@@ -47,6 +47,7 @@ class GeminiProvider(AIProvider):
     """Google Gemini Flash implementation using the REST API."""
 
     model_name = "gemini-3.8-flash"
+    fallback_models = ["gemini-3.8-flash", "gemini-3-flash-preview", "gemini-2.5-flash-lite"]
 
     def __init__(self, api_key: str) -> None:
         self.api_key = api_key
@@ -96,8 +97,6 @@ class GeminiProvider(AIProvider):
                 }
             )
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self.model_name}:generateContent?key={self.api_key}"
-
         payload = {
             "systemInstruction": {"parts": [{"text": system_instruction}]},
             "contents": [{"role": "user", "parts": parts}],
@@ -107,8 +106,18 @@ class GeminiProvider(AIProvider):
             },
         }
 
+        resp = None
         async with httpx.AsyncClient(timeout=30.0) as client:
-            resp = await client.post(url, json=payload)
+            for candidate_model in self.fallback_models:
+                url = f"https://generativelanguage.googleapis.com/v1beta/models/{candidate_model}:generateContent?key={self.api_key}"
+                resp = await client.post(url, json=payload)
+                if resp.status_code == 200:
+                    self.model_name = candidate_model
+                    break
+                if resp.status_code in (401, 403):
+                    break
+
+        assert resp is not None
 
         if resp.status_code in (401, 403):
             raise HTTPException(
